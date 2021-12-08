@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
+// Take an event dictionary, return its full process tree
 func eventProcessTree(event map[string]interface{}) []int {
 	var processTree []int
 
@@ -18,9 +19,11 @@ func eventProcessTree(event map[string]interface{}) []int {
 		processTree = append(processTree, eventPPid)
 		for eventPPid != 1 {
 			parentProcess, err := ps.FindProcess(eventPPid)
-			eventPPid = parentProcess.PPid()
-			if eventPPid != 1 && err == nil {
-				processTree = append(processTree, eventPPid)
+			if err == nil {
+				eventPPid = parentProcess.PPid()
+				if eventPPid != 1 {
+					processTree = append(processTree, eventPPid)
+				}
 			}
 		}
 	}
