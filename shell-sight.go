@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	auparse "github.com/elastic/go-libaudit/auparse"
-	tail "github.com/nxadm/tail"
+	"github.com/elastic/go-libaudit/auparse"
+	"github.com/nxadm/tail"
 )
 
 func main() {
@@ -22,7 +22,8 @@ func main() {
 			// Get a dictionary of values
 			parsedEvent := auditEvent.ToMapStr()
 			if err == nil && (parsedEvent["tags"].([]string)[0] != "x86_64") {
-				fmt.Println(parsedEvent["tags"])
+				// Get relevant process info from the event
+				fmt.Println(eventProcessTree(parsedEvent))
 			}
 		}
 	}
