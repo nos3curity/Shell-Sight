@@ -26,14 +26,19 @@ func main() {
 			// Get a dictionary of values
 			parsedEvent := auditEvent.ToMapStr()
 			if err == nil && (parsedEvent["tags"].([]string)[0] != "x86_64") {
-				// Get relevant process info from the event
 				if *verboseFlag {
 					fmt.Println(parsedEvent)
-					fmt.Println(eventProcessTree(parsedEvent))
 				}
+				eventConnections := eventSockets(parsedEvent)
 
-				if eventSockets(parsedEvent) != nil {
-					fmt.Println(eventSockets(parsedEvent))
+				if isBindShell(eventConnections) {
+					fmt.Println("Bind Shell")
+					fmt.Println(eventConnections)
+				} else if isReverseShell(eventConnections) {
+					fmt.Println("Reverse Shell")
+					fmt.Println(eventConnections)
+				} else {
+					fmt.Println("SSH")
 				}
 			}
 		}
