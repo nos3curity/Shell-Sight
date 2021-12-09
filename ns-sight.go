@@ -5,53 +5,38 @@ import (
 )
 
 // Get all established connections and return their sockets
-func establishedConnections() []netstat.SockTabEntry {
-	var establishedSockets []netstat.SockTabEntry
+func getConnectionSockets(state netstat.SkState) []netstat.SockTabEntry {
+	var sockets []netstat.SockTabEntry
 
-	// Get all TCP sockets that have an established state
+	// Get all TCP sockets with specified state
 	tcpSockets, _ := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
-		return s.State == netstat.Established
+		return s.State == state
 	})
-	// Get all UDP sockets that have an established state
+	// Get all UDP sockets with specified state
 	udpSockets, _ := netstat.UDPSocks(func(s *netstat.SockTabEntry) bool {
-		return s.State == netstat.Established
+		return s.State == state
 	})
 
 	// Combine TCP and UDP
-	establishedSockets = append(establishedSockets, tcpSockets...)
-	establishedSockets = append(establishedSockets, udpSockets...)
+	sockets = append(sockets, tcpSockets...)
+	sockets = append(sockets, udpSockets...)
 
-	return establishedSockets
-}
-
-// Get all listening connections and return their sockets
-func listeningConnections() []netstat.SockTabEntry {
-	var listeningSockets []netstat.SockTabEntry
-
-	tcpSockets, _ := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
-		return s.State == netstat.Listen
-	})
-	udpSockets, _ := netstat.UDPSocks(func(s *netstat.SockTabEntry) bool {
-		return s.State == netstat.Listen
-	})
-
-	// Combine TCP and UDP
-	listeningSockets = append(listeningSockets, tcpSockets...)
-	listeningSockets = append(listeningSockets, udpSockets...)
-
-	return listeningSockets
+	return sockets
 }
 
 // Take an event and return its network-communicating sockets
 func eventSockets(event map[string]interface{}) []netstat.SockTabEntry {
 	var relevantSockets []netstat.SockTabEntry
 	var processTree = eventProcessTree(event)
-	var allSockets = append(establishedConnections(), listeningConnections()...)
+	var allSockets = append(getConnectionSockets(netstat.Established), getConnectionSockets(netstat.Listen)...)
 
 	for _, pid := range processTree {
 		for _, socket := range allSockets {
-			if pid == socket.Process.Pid {
-				relevantSockets = append(relevantSockets, socket)
+			process := socket.Process
+			if process != nil {
+				if pid == socket.Process.Pid {
+					relevantSockets = append(relevantSockets, socket)
+				}
 			}
 		}
 	}
